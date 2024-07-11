@@ -18,11 +18,11 @@ class Human {
   float x, z, th;
   float vx, vz, fx, fz;
   Figure myFig, favFig;
-  Human partner;
-  float activeness = 0., tolerance = 0.5;
+  Human partner, candidate;
+  float partnerH;
+  float activeness = 0., tolerance = 0.5, fickleness = 0.3;
   
-  private Human candidate;
-  private float candidateF;
+  private float candidateH;
   ArrayList<Human> pickers;
 
   Human(int id) {
@@ -35,7 +35,7 @@ class Human {
   }
   void resetForStep() {
     fx = fz = 0;
-    candidateF = 1. - activeness;
+    candidateH = (partner != null)? partnerH * fickleness : 1. - activeness;
     candidate = null;
     pickers = null;
   }
@@ -43,11 +43,11 @@ class Human {
     return dist(x, z, a.x, a.z);
   }
   void affected(Human a, float d) {
-    float f = (favFig.diff(a.myFig) - 0.5) * 0.5 + 20 / (d * d);
+    float h = favFig.diff(a.myFig), f = (h - 0.5) * 0.5 + 20 / (d * d);
     float dx = (x - a.x) / d, dz = (z - a.z) / d;
     fx += f * dx;
     fz += f * dz;
-    if (candidateF > f) { candidateF = f; candidate = a; }
+    if (candidateH > h) { candidateH = h; candidate = a; }
   }
   void drawMe() {
     push();
@@ -72,7 +72,8 @@ class Human {
     pop();
   }
   boolean acceptable(Human a) {
-    return (favFig.diff(a.myFig) < tolerance);
+    float h = favFig.diff(a.myFig);
+    return h < ((partner != null)? partnerH * fickleness : tolerance);
   }
   void gatherPickers() {
     if (candidate != null) {
@@ -81,10 +82,13 @@ class Human {
     }
   }
   void doAction() {
-    if (candidate != null) {
+    if (candidate != null && candidate.partner == null) {
       if (candidate.acceptable(this)) {
         partner = candidate;
+        partnerH = candidateH;
         candidate.partner = this;
+        candidate.partnerH = candidate.favFig.diff(myFig);
+        candidate.candidate = null;
       }
     }
     vx = (vx + fx) * 0.99;

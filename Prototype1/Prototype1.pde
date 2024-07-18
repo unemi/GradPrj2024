@@ -5,18 +5,19 @@ void setup() {
   for (int i = 0; i < pop.length; i ++)
     pop[i] = new Human(i);
   noStroke();
+  colorMode(HSB, 360, 100, 100);
  // frameRate(10);
 }
 float camAngle = 0.;
 void draw() {
   background(220);
-  ambientLight(160,160,160);
-  directionalLight(200,200,200, 0,1,-1);
+  ambientLight(0,0,70);
+  directionalLight(0,0,80, 0,1,-1);
   camera(400*sin(camAngle),-200,400*cos(camAngle), 0,0,0, 0,1,0);
-  if ((camAngle += PI / 360) > TWO_PI) camAngle -= TWO_PI;
+  if ((camAngle += PI / 720) > TWO_PI) camAngle -= TWO_PI;
   push();
   translate(0,5.5,0);
-  fill(255,240,200);
+  fill(45,50,90);
   box(410, 1, 410);
   pop();
   for (int i = 1; i < pop.length; i ++) {

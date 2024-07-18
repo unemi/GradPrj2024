@@ -1,20 +1,21 @@
+int Male = 0, Female = 1;
 class Figure {
-  float r, g, b;
-  Figure() {
-    r = random(255);
-    g = random(255);
-    b = random(255);
+  float h, s, b;
+  Figure(int sex) {
+    h = (sex == Male)? int(random(180)) + 90 : (int(random(180)) + 270) % 360;
+    s = random(50,100);
+    b = random(50,100);
   }
   color colour() {
-    return color(r, g, b);
+    return color(h, s, b);
   }
   float diff(Figure f) {
     return sqrt(
-      pow(r - f.r, 2)+pow(g - f.g, 2)+pow(b - f.b, 2)) / 255.0;
+      pow(h - f.h, 2)+pow(s - f.s, 2)+pow(b - f.b, 2)) / 255.0;
   }
 }
 class Human {
-  int ID;
+  int ID, sex;
   float x, z, th;
   float vx, vz, fx, fz;
   Figure myFig, favFig;
@@ -27,11 +28,12 @@ class Human {
 
   Human(int id) {
     ID = id;
+    sex = id % 2;
     x = random(-200,200);
     z = random(-200,200);
     th = random(-PI,PI);
-    myFig = new Figure();
-    favFig = new Figure();
+    myFig = new Figure(sex);
+    favFig = new Figure(1-sex);
   }
   void resetForStep() {
     fx = fz = 0;
@@ -64,7 +66,8 @@ class Human {
     push();
     fill(myFig.colour());
     translate(0,-5,0);
-    sphere(5);
+    if (sex == Male) cylinder(5,10);
+    else sphere(5);
     pop();
     fill(favFig.colour());
     translate(0, 2.5, 0);

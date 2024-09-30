@@ -1,4 +1,6 @@
 Human[] pop = new Human[100];
+PShape head;
+int camMode = 1;
 int step = 0;
 void setup() {
   size(1280,720,P3D);
@@ -6,6 +8,7 @@ void setup() {
     pop[i] = new Human(i);
   noStroke();
   colorMode(HSB, 360, 100, 100);
+  head = loadShape("monkeyHead.obj");
  // frameRate(10);
 }
 float camAngle = 0.;
@@ -13,7 +16,16 @@ void draw() {
   background(220);
   ambientLight(0,0,70);
   directionalLight(0,0,80, 0,1,-1);
-  camera(400*sin(camAngle),-200,400*cos(camAngle), 0,0,0, 0,1,0);
+  switch (camMode) {
+    case 0:
+    camera(400*sin(camAngle),-200,400*cos(camAngle), 0,0,0, 0,1,0);
+    break;
+    case 1:
+    camera(0,-100,100, 0,0,0, 0,1,0); break;
+    case 2:
+    Human a = pop[0];
+    camera(a.x,-50,a.z, a.x+1e4*a.vx,0,a.z+1e4*a.vz, 0,1,0);
+  }
   if ((camAngle += PI / 720) > TWO_PI) camAngle -= TWO_PI;
   push();
   translate(0,5.5,0);

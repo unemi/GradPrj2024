@@ -63,11 +63,12 @@ class Human {
       cone(3, 10);
       pop();
     }
+    rotateY(atan2(-vz, vx));
     push();
     fill(myFig.colour());
     translate(0,-5,0);
     if (sex == Male) cylinder(5,10);
-    else sphere(5);
+    else { scale(5,-5,5); shape(head); }//sphere(5);
     pop();
     fill(favFig.colour());
     translate(0, 2.5, 0);

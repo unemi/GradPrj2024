@@ -1,7 +1,8 @@
 Human[] pop = new Human[100];
-PShape head;
-int camMode = 1;
+PShape head, env;
+int camMode = 2;
 int step = 0;
+Human viewer;
 void setup() {
   size(1280,720,P3D);
   for (int i = 0; i < pop.length; i ++)
@@ -9,6 +10,10 @@ void setup() {
   noStroke();
   colorMode(HSB, 360, 100, 100);
   head = loadShape("monkeyHead.obj");
+  env = setupEnv("SokaUnivCampus.jpg");
+  viewer = pop[1];
+  float fov = PI/3., cZ = height/2.0 / tan(fov/2.);
+  perspective(fov, float(width)/height, cZ/100.0, cZ*10.0);
  // frameRate(10);
 }
 float camAngle = 0.;
@@ -23,12 +28,14 @@ void draw() {
     case 1:
     camera(0,-100,100, 0,0,0, 0,1,0); break;
     case 2:
-    Human a = pop[0];
-    camera(a.x,-50,a.z, a.x+1e4*a.vx,0,a.z+1e4*a.vz, 0,1,0);
+    camera(viewer.x-cos(viewer.th)*30,-20,viewer.z+sin(viewer.th)*30,
+      viewer.x,-10,viewer.z,
+      0,1,0);
   }
   if ((camAngle += PI / 720) > TWO_PI) camAngle -= TWO_PI;
   push();
   translate(0,5.5,0);
+  shape(env);
   fill(45,50,90);
   box(410, 1, 410);
   pop();

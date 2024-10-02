@@ -63,12 +63,17 @@ class Human {
       cone(3, 10);
       pop();
     }
-    rotateY(atan2(-vz, vx));
+    rotateY(th);
     push();
-    fill(myFig.colour());
     translate(0,-5,0);
-    if (sex == Male) cylinder(5,10);
-    else { scale(5,-5,5); shape(head); }//sphere(5);
+    if (sex == Male) {
+      fill(myFig.colour());
+      cylinder(5,10);
+    } else {
+      scale(5,-5,5);//sphere(5);
+      head.setFill(myFig.colour());
+      shape(head);
+    }
     pop();
     fill(favFig.colour());
     translate(0, 2.5, 0);
@@ -98,6 +103,7 @@ class Human {
     vx = (vx + fx) * 0.99;
     vz = (vz + fz) * 0.99;
     float v = sqrt(vx*vx + vz*vz);
+    if (abs(v) > 1e-8) th = atan2(-vz, vx);
     float maxV = 2;
     if (v > maxV) { vx *= maxV / v; vz *= maxV / v; }
     x += vx; z += vz;

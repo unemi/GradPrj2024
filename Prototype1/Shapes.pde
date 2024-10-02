@@ -23,6 +23,20 @@ void cylinder(float r, float h) {
   }
   endShape();
 }
+PShape setupEnv(String name) {
+  float r = 600, h = 800;
+  PShape sh = createShape();
+  sh.setTextureMode(NORMAL);
+  sh.setTexture(loadImage(name));
+  sh.beginShape(TRIANGLE_STRIP);
+  for (int i = 0; i <= 32; i ++) {
+    float th = i * TWO_PI / 32.;
+    sh.vertex(r * cos(th), -h / 2, r * sin(th), i / 32., 0.);
+    sh.vertex(r * cos(th), h / 2, r * sin(th), i / 32., 1.);
+  }
+  sh.endShape();
+  return sh;
+}
 void pentaPrism(float s, float h) {
   beginShape(TRIANGLE_STRIP);
   vertex(-s/2, -h, -s/2);

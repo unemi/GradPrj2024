@@ -1,29 +1,32 @@
 int Male = 0, Female = 1;
+float Avoid = 1., Approach = 0.2;
 class Figure {
   float h, s, b;
   Figure(int sex) {
-    h = (sex == Male)? int(random(180)) + 90 : (int(random(180)) + 270) % 360;
+    h = random(360);
     s = random(50,100);
-    b = random(50,100);
+    b = (sex == Male)? 70 : 100;
   }
   color colour() {
     return color(h, s, b);
   }
-  float diff(Figure f) {
-    return sqrt(
-      pow(h - f.h, 2)+pow(s - f.s, 2)+pow(b - f.b, 2)) / 255.0;
+  float howLike(float fh) {
+    float d = abs(h - fh);
+    float H = ((d < 180)? d : 360 - d) / 180., S = (s - 50) / 50.;
+    return S * (1. - 2. * H);
   }
 }
 class Human {
   int ID, sex;
-  float x, z, th;
+  float x, z, th, faceTh;
   float vx, vz, fx, fz;
-  Figure myFig, favFig;
+  float favHue;
+  Figure myFig;
   Human partner, candidate;
-  float partnerH;
-  float activeness = 0., tolerance = 0.5, fickleness = 0.3;
+  float partnerF;
+  float activeness = 0.9, tolerance = 0.5, fickleness = 0.3;
   
-  private float candidateH;
+  private float candidateF;
   ArrayList<Human> pickers;
 
   Human(int id) {
@@ -33,11 +36,16 @@ class Human {
     z = random(-200,200);
     th = random(-PI,PI);
     myFig = new Figure(sex);
-    favFig = new Figure(1-sex);
+    favHue = random(360);
   }
   void resetForStep() {
     fx = fz = 0;
-    candidateH = (partner != null)? partnerH * fickleness : 1. - activeness;
+    float avoid = nearDist * 5;
+    if (x - worldSize/2 < nearDist) fx = -avoid / pow(x - worldSize/2, 2);
+    else if (x + worldSize/2 < nearDist) fx = avoid / pow(x + worldSize/2, 2);
+    if (z - worldSize/2 < nearDist) fz = -avoid / pow(z - worldSize/2, 2);
+    else if (z + worldSize/2 < nearDist) fz = avoid / pow(z + worldSize/2, 2);
+    candidateF = (partner != null)? partnerF * (1. - fickleness) : 1. - activeness;
     candidate = null;
     pickers = null;
   }
@@ -45,44 +53,56 @@ class Human {
     return dist(x, z, a.x, a.z);
   }
   void affected(Human a, float d) {
-    float h = favFig.diff(a.myFig), f = (h - 0.5) * 0.5 + 20 / (d * d);
-    float dx = (x - a.x) / d, dz = (z - a.z) / d;
+    float like = a.myFig.howLike(favHue);
+    float dx = (a.x - x) / d, dz = (a.z - z) / d;
+    float avoid = - nearDist / (d * d);
+    float f = Avoid * avoid + Approach * like;
     fx += f * dx;
     fz += f * dz;
-    if (candidateH > h) { candidateH = h; candidate = a; }
+    if (candidateF < like) { candidateF = like; candidate = a; }
   }
   void drawMe() {
     push();
     translate(x, 0, z);
     if (candidate != null) {
       push();
-      rotateY(atan2(-candidate.z + z, candidate.x - x));
-      translate(10,-5,0);
+      faceTh = atan2(-candidate.z + z, candidate.x - x);
+      rotateY(faceTh);
+      translate(agentSize*2,-agentSize,0);
       rotateZ(-PI/2);
       fill(candidate.myFig.colour());
-      cone(3, 10);
+      cone(agentSize*3/5, agentSize*2);
       pop();
-    }
-    rotateY(th);
+    } else faceTh = (partner != null)?
+      atan2(-partner.z + z, partner.x - x) : th;
+    rotateY(faceTh);
     push();
-    translate(0,-5,0);
+    translate(0,-agentSize,0);
+    scale(agentSize,-agentSize,agentSize);
+    push();
     if (sex == Male) {
-      fill(myFig.colour());
-      cylinder(5,10);
+      scale(5);
+      rotateY(PI/2);
+      body.setFill(myFig.colour());
+      shape(body);
+      //cylinder(agentSize,agentSize*2);
     } else {
-      scale(5,-5,5);//sphere(5);
+      //scale(agentSize,-agentSize,agentSize);//sphere(5);
       head.setFill(myFig.colour());
       shape(head);
     }
     pop();
-    fill(favFig.colour());
-    translate(0, 2.5, 0);
-    box(10, 5, 10);
+    fill((partner != null)? color(0,100,100) : color(0,0,50));
+    box(3,0.1,3);
+    pop();
+    fill(color(favHue,100,100));
+    translate(0, agentSize/2, 0);
+    box(agentSize*2, agentSize, agentSize*2);
     pop();
   }
   boolean acceptable(Human a) {
-    float h = favFig.diff(a.myFig);
-    return h < ((partner != null)? partnerH * fickleness : tolerance);
+    float f = a.myFig.howLike(favHue);
+    return f > ((partner != null)? partnerF * fickleness : tolerance);
   }
   void gatherPickers() {
     if (candidate != null) {
@@ -94,9 +114,9 @@ class Human {
     if (candidate != null && candidate.partner == null) {
       if (candidate.acceptable(this)) {
         partner = candidate;
-        partnerH = candidateH;
+        partnerF = candidateF;
         candidate.partner = this;
-        candidate.partnerH = candidate.favFig.diff(myFig);
+        candidate.partnerF = myFig.howLike(candidate.favHue);
         candidate.candidate = null;
       }
     }
@@ -106,11 +126,11 @@ class Human {
     if (abs(v) > 1e-8) th = atan2(-vz, vx);
     float maxV = 2;
     if (v > maxV) { vx *= maxV / v; vz *= maxV / v; }
-    x += vx; z += vz;
-    if (x < -200) { vx = -vx; x = -400 - x; }
-    else if (x > 200) { vx = - vx; x = 400 - x; }
-    if (z < -200) { vz = -vz; z = -400 - z; }
-    else if (z > 200) { vz = - vz; z = 400 - z; }
+    x += vx * agentSize/5; z += vz * agentSize/5;
+    if (x < -worldSize/2) { vx = -vx; x = -worldSize - x; }
+    else if (x > worldSize/2) { vx = - vx; x = worldSize - x; }
+    if (z < -worldSize/2) { vz = -vz; z = -worldSize - z; }
+    else if (z > worldSize/2) { vz = - vz; z = worldSize - z; }
     //x = min(200,max(-200,x+vx));
     //z = min(200,max(-200,z+vz));
     //th = atan2(vz, vx);

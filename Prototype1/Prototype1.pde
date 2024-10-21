@@ -1,5 +1,6 @@
 Human[] pop = new Human[100];
-PShape head, env;
+float nearDist = 20, worldSize = 400, agentSize = 2;
+PShape head, body, env;
 int camMode = 2;
 int step = 0;
 Human viewer;
@@ -10,6 +11,7 @@ void setup() {
   noStroke();
   colorMode(HSB, 360, 100, 100);
   head = loadShape("monkeyHead.obj");
+  body = loadShape("LowPoly-Characters.obj");
   env = setupEnv("SokaUnivCampus.jpg");
   viewer = pop[1];
   float fov = PI/3., cZ = height/2.0 / tan(fov/2.);
@@ -23,21 +25,23 @@ void draw() {
   directionalLight(0,0,80, 0,1,-1);
   switch (camMode) {
     case 0:
-    camera(400*sin(camAngle),-200,400*cos(camAngle), 0,0,0, 0,1,0);
+    camera(worldSize*sin(camAngle),-worldSize/2,worldSize*cos(camAngle), 0,0,0, 0,1,0);
     break;
     case 1:
-    camera(0,-100,100, 0,0,0, 0,1,0); break;
+    camera(0,-worldSize/4,worldSize/4, 0,0,0, 0,1,0); break;
     case 2:
-    camera(viewer.x-cos(viewer.th)*30,-20,viewer.z+sin(viewer.th)*30,
-      viewer.x,-10,viewer.z,
+    camera(viewer.x-cos(viewer.faceTh)*agentSize*6,
+      -agentSize*4,
+      viewer.z+sin(viewer.faceTh)*agentSize*6,
+      viewer.x,-agentSize*2,viewer.z,
       0,1,0);
   }
   if ((camAngle += PI / 720) > TWO_PI) camAngle -= TWO_PI;
   push();
-  translate(0,5.5,0);
+  translate(0,agentSize*1.1,0);
   shape(env);
   fill(45,50,90);
-  box(410, 1, 410);
+  box(worldSize+agentSize*2, 1, worldSize+agentSize*2);
   pop();
   for (int i = 1; i < pop.length; i ++) {
     int j = int(random(pop.length - i)) + i;
@@ -52,7 +56,7 @@ void draw() {
     for (int j = 0; j < i; j ++) {
       Human b = pop[j];
       float d = a.distance(b);
-      if (d > 20) continue;
+      if (d > nearDist) continue;
       a.affected(b, d);
       b.affected(a, d);
     }
@@ -60,5 +64,8 @@ void draw() {
   for (Human h : pop) h.doAction();
   int cnt = 0;
   for (Human h : pop) if (h.partner != null) cnt ++;
-  println(step++ + "," + cnt);
+  //println(step++ + "," + cnt);
+}
+void mousePressed() {
+  camMode = (camMode + 1) % 3;
 }

@@ -17,7 +17,7 @@ class Figure {
   }
 }
 class Human {
-  int ID, sex;
+  int ID, sex, age;
   float x, z, th, faceTh;
   float vx, vz, fx, fz;
   float favHue;
@@ -25,6 +25,7 @@ class Human {
   Human partner, candidate;
   float partnerF;
   float activeness = 0.9, tolerance = 0.5, fickleness = 0.3;
+  float ageScl;
   
   private float candidateF;
   ArrayList<Human> pickers;
@@ -37,9 +38,11 @@ class Human {
     th = random(-PI,PI);
     myFig = new Figure(sex);
     favHue = random(360);
+    age = int(random(90*12));
   }
   void resetForStep() {
     fx = fz = 0;
+    age ++;
     float avoid = nearDist * 5;
     if (x - worldSize/2 < nearDist) fx = -avoid / pow(x - worldSize/2, 2);
     else if (x + worldSize/2 < nearDist) fx = avoid / pow(x + worldSize/2, 2);
@@ -64,30 +67,33 @@ class Human {
   void drawMe() {
     push();
     translate(x, 0, z);
+    ageScl = ((age > 17*12)? 1. :
+      1. - (17*12 - age) / (17.*12) * 0.7) * agentSize;
+    
     if (candidate != null) {
       push();
       faceTh = atan2(-candidate.z + z, candidate.x - x);
       rotateY(faceTh);
-      translate(agentSize*2,-agentSize,0);
+      translate(ageScl*2,-ageScl,0);
       rotateZ(-PI/2);
       fill(candidate.myFig.colour());
-      cone(agentSize*3/5, agentSize*2);
+      cone(ageScl*3/5, ageScl*2);
       pop();
     } else faceTh = (partner != null)?
       atan2(-partner.z + z, partner.x - x) : th;
     rotateY(faceTh);
     push();
-    translate(0,-agentSize,0);
-    scale(agentSize,-agentSize,agentSize);
+    translate(0,-ageScl,0);
+    scale(ageScl,-ageScl,ageScl);
     push();
     if (sex == Male) {
       scale(5);
       rotateY(PI/2);
       body.setFill(myFig.colour());
       shape(body);
-      //cylinder(agentSize,agentSize*2);
+      //cylinder(ageScl,ageScl*2);
     } else {
-      //scale(agentSize,-agentSize,agentSize);//sphere(5);
+      //scale(ageScl,-ageScl,ageScl);//sphere(5);
       head.setFill(myFig.colour());
       shape(head);
     }
@@ -96,8 +102,8 @@ class Human {
     box(3,0.1,3);
     pop();
     fill(color(favHue,100,100));
-    translate(0, agentSize/2, 0);
-    box(agentSize*2, agentSize, agentSize*2);
+    translate(0, ageScl/2, 0);
+    box(ageScl*2, ageScl, ageScl*2);
     pop();
   }
   boolean acceptable(Human a) {
@@ -126,7 +132,7 @@ class Human {
     if (abs(v) > 1e-8) th = atan2(-vz, vx);
     float maxV = 2;
     if (v > maxV) { vx *= maxV / v; vz *= maxV / v; }
-    x += vx * agentSize/5; z += vz * agentSize/5;
+    x += vx * ageScl/5; z += vz * ageScl/5;
     if (x < -worldSize/2) { vx = -vx; x = -worldSize - x; }
     else if (x > worldSize/2) { vx = - vx; x = worldSize - x; }
     if (z < -worldSize/2) { vz = -vz; z = -worldSize - z; }

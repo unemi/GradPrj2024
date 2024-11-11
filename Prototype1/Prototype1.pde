@@ -1,4 +1,5 @@
-Human[] pop = new Human[100];
+ArrayList<Human> pop, newBornBB;
+int initPopSize = 100;
 float nearDist = 20, worldSize = 400, agentSize = 2;
 PShape head, body, env;
 int camMode = 2;
@@ -6,17 +7,18 @@ int step = 0;
 Human viewer;
 void setup() {
   size(1280,720,P3D);
-  for (int i = 0; i < pop.length; i ++)
-    pop[i] = new Human(i);
+  pop = new ArrayList(initPopSize);
+  for (int i = 0; i < initPopSize; i ++)
+    pop.add(new Human());
   noStroke();
   colorMode(HSB, 360, 100, 100);
   head = loadShape("monkeyHead.obj");
   body = loadShape("LowPoly-Characters.obj");
   env = setupEnv("SokaUnivCampus.jpg");
-  viewer = pop[1];
+  viewer = pop.get(1);
   float fov = PI/3., cZ = height/2.0 / tan(fov/2.);
   perspective(fov, float(width)/height, cZ/100.0, cZ*10.0);
- // frameRate(10);
+  //frameRate(2);
 }
 float camAngle = 0.;
 void draw() {
@@ -43,18 +45,27 @@ void draw() {
   fill(45,50,90);
   box(worldSize+agentSize*2, 1, worldSize+agentSize*2);
   pop();
-  for (int i = 1; i < pop.length; i ++) {
-    int j = int(random(pop.length - i)) + i;
-    Human h = pop[i - 1];
-    pop[i - 1] = pop[j];
-    pop[j] = h;
+//
+  int popSize = pop.size();
+  ArrayList<Human> newPop = new ArrayList(popSize);
+  while (pop.size() > 0) {
+    int i = int(random(pop.size()));
+    newPop.add(pop.get(i));
+    pop.remove(i);
   }
+  pop = newPop;
+  newBornBB = new ArrayList();
   for (Human h : pop) h.drawMe();
   for (Human h : pop) h.resetForStep();
-  for (int i = 1; i < pop.length; i ++) {
-    Human a = pop[i];
+  for (int i = popSize - 1; i >= 0; i --) {
+    if (pop.get(i).age > 85*12) { pop.remove(i); }
+  }
+  pop.addAll(newBornBB);
+  if ((popSize = pop.size()) <= 0) { noLoop(); return; }
+  for (int i = 1; i < popSize; i ++) {
+    Human a = pop.get(i);
     for (int j = 0; j < i; j ++) {
-      Human b = pop[j];
+      Human b = pop.get(j);
       float d = a.distance(b);
       if (d > nearDist) continue;
       a.affected(b, d);
@@ -64,7 +75,8 @@ void draw() {
   for (Human h : pop) h.doAction();
   int cnt = 0;
   for (Human h : pop) if (h.partner != null) cnt ++;
-  //println(step++ + "," + cnt);
+  println(step++ + ": partners=" + cnt +
+    ", newBornBB=" + newBornBB.size() + ", popSize=" + popSize);
 }
 void mousePressed() {
   camMode = (camMode + 1) % 3;

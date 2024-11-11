@@ -1,10 +1,21 @@
 int Male = 0, Female = 1;
 float Avoid = 1., Approach = 0.2;
+
+float inheritedHue(float m, float d) {
+  float h = ((random(1.0) < 0.5)? m : d) + random(-5,5);
+  if (h > 360) h -= 360; else if (h < 0) h += 360;
+  return h;
+}
 class Figure {
   float h, s, b;
   Figure(int sex) {
     h = random(360);
     s = random(50,100);
+    b = (sex == Male)? 70 : 100;
+  }
+  Figure(int sex, Figure m, Figure d) {
+    h = inheritedHue(m.h, d.h);
+    s = min(100, max(50, ((random(1.0) < 0.5)? m.s : d.s) + random(-3,3)));
     b = (sex == Male)? 70 : 100;
   }
   color colour() {
@@ -16,13 +27,14 @@ class Figure {
     return S * (1. - 2. * H);
   }
 }
+int IDCount = 0;
 class Human {
-  int ID, sex, age;
+  int ID, sex, age, pregn;
   float x, z, th, faceTh;
   float vx, vz, fx, fz;
   float favHue;
   Figure myFig;
-  Human partner, candidate;
+  Human partner, candidate, fetusDad;
   float partnerF;
   float activeness = 0.9, tolerance = 0.5, fickleness = 0.3;
   float ageScl;
@@ -30,15 +42,26 @@ class Human {
   private float candidateF;
   ArrayList<Human> pickers;
 
-  Human(int id) {
-    ID = id;
-    sex = id % 2;
+  Human() {
+    ID = IDCount ++;
+    sex = (random(1.0) < 0.5)? Male : Female;
     x = random(-200,200);
     z = random(-200,200);
     th = random(-PI,PI);
     myFig = new Figure(sex);
     favHue = random(360);
     age = int(random(90*12));
+  }
+  Human(Human mom, Human dad) {
+    ID = IDCount ++;
+    sex = (random(1.0) < 0.5)? Male : Female;
+    age = 0;
+    float d = random(10,15), th = random(TWO_PI);
+    x = mom.x + d * cos(th);
+    z = mom.z + d * sin(th);
+    th = random(-PI,PI);
+    myFig = new Figure(sex, mom.myFig, dad.myFig);
+    favHue = inheritedHue(mom.favHue, dad.favHue);
   }
   void resetForStep() {
     fx = fz = 0;
@@ -116,7 +139,33 @@ class Human {
       candidate.pickers.add(this);
     }
   }
+  float pregProb() {  // proberbility of fertilization
+    // M: (0,0)-(13,0)-(15,1.0)-(30,1.0)-(50,0.6)-(90,0.0)
+    // F: (0,0)-(14,0)-(16,1.0)-(30,1.0)-(50,0.0)
+    float f = age / 12.0, m = partner.age / 12.0;
+    return ((f < 14)? 0.0 :
+      (f < 16)? (f - 14) / (16 - 14) :
+      (f < 30)? 1.0 :
+      (f < 50)? 1.0 - (f - 30) / (50 - 30) : 0.0) *
+      ((m < 13)? 0.0 :
+      (m < 15)? (m - 13) / (15 - 13) :
+      (m < 30)? 1.0 :
+      (m < 50)? 1.0 - (m - 30) / (50 - 30) * (1.0 - 0.6) :
+      (m < 90)? 0.6 - (m - 50) / (90 - 50) : 0.0);
+  }
   void doAction() {
+    if (sex == Female) {
+      if (pregn > 9) {
+        newBornBB.add(new Human(this, fetusDad));
+        pregn = 0; fetusDad = null;
+        //println("got pregnant.");
+      } else if (pregn > 0) { pregn ++;
+      } else if (partner != null && partner.partner == this
+        && pregProb() > random(1.0)) {
+          pregn = 1;
+          fetusDad = partner;
+      }
+    }
     if (candidate != null && candidate.partner == null) {
       if (candidate.acceptable(this)) {
         partner = candidate;

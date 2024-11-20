@@ -4,6 +4,7 @@ float nearDist = 60, worldSize = 400, agentSize = 2;
 PShape head, body, env;
 int camMode = 2;
 int step = 0;
+float camX, camY, camZ, tgtX, tgtY, tgtZ;
 Human viewer;
 void setup() {
   size(1280,720,P3D);
@@ -12,8 +13,8 @@ void setup() {
     pop.add(new Human());
   noStroke();
   colorMode(HSB, 360, 100, 100);
-  head = loadShape("monkeyHead.obj");
-  body = loadShape("LowPoly-Characters.obj");
+  //head = loadShape("monkeyHead.obj");
+  //body = loadShape("LowPoly-Characters.obj");
   env = setupEnv("SokaUnivCampus.jpg");
   viewer = pop.get(1);
   float fov = PI/3., cZ = height/2.0 / tan(fov/2.);
@@ -28,17 +29,18 @@ void draw() {
   float d = worldSize*camDist/100.;
   switch (camMode) {
     case 0:
-    camera(d*sin(camAngle),-d/2,d*cos(camAngle), 0,0,0, 0,1,0);
-    break;
+    camX = d*sin(camAngle); camY = -d/2; camZ = d*cos(camAngle);
+    tgtX = tgtY = tgtZ = 0; break;
     case 1:
-    camera(0,-d/4,d/4, 0,0,0, 0,1,0); break;
+    camX = 0; camY = -d/4; camZ = d/4;
+    tgtX = tgtY = tgtZ = 0; break;
     case 2:
-    camera(viewer.x-cos(viewer.faceTh)*agentSize*6,
-      -agentSize*4,
-      viewer.z+sin(viewer.faceTh)*agentSize*6,
-      viewer.x,-agentSize*2,viewer.z,
-      0,1,0);
+    camX = viewer.x-cos(viewer.faceTh)*agentSize*d/40;
+    camY = -agentSize*4;
+    camZ = viewer.z+sin(viewer.faceTh)*agentSize*d/40;
+    tgtX = viewer.x; tgtY = -agentSize*2; tgtZ = viewer.z;
   }
+  camera(camX, camY, camZ, tgtX, tgtY, tgtZ, 0, 1, 0);
   if ((camAngle += PI / 720) > TWO_PI) camAngle -= TWO_PI;
   push();
   translate(0,agentSize*1.1,0);

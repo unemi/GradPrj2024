@@ -38,6 +38,7 @@ class Human {
   float partnerF;
   float activeness = 0.9, tolerance = 0.5, fickleness = 0.3;
   float ageScl;
+  int detail;
   
   private float candidateF;
   ArrayList<Human> pickers;
@@ -93,7 +94,10 @@ class Human {
     translate(x, 0, z);
     ageScl = ((age > 17*12)? 1. :
       1. - (17*12 - age) / (17.*12) * 0.7) * agentSize;
-    
+    float camD = dist(x, 0, z, camX, camY, camZ);
+    detail = (camD < agentSize*2)? 32 : (camD > worldSize/2)? 6 :
+      int(32 - (camD - agentSize*2) / (worldSize/2 - agentSize*2) * (32 - 6));
+    sphereDetail(detail);
     if (candidate != null) {
       push();
       faceTh = atan2(-candidate.z + z, candidate.x - x);
@@ -101,7 +105,7 @@ class Human {
       translate(ageScl*2,-ageScl,0);
       rotateZ(-PI/2);
       fill(candidate.myFig.colour());
-      cone(ageScl*3/5, ageScl*2);
+      cone(ageScl*3/5, ageScl*2, false, detail);
       pop();
     } else faceTh = (partner != null)?
       atan2(-partner.z + z, partner.x - x) : th;
@@ -112,25 +116,28 @@ class Human {
     push();
     if (sex == Male) {
       rotateY(PI/2);
-      //body.setFill(myFig.colour()); scale(5); shape(body);
-      fill(myFig.colour()); cylinder(1,2);
+      //ody.setFill(myFig.colour()); scale(5); shape(body);
+      fill(myFig.colour()); sphere(1);
     } else {
       //head.setFill(myFig.colour()); shape(head);
-      fill(myFig.colour()); cylinder(1,2);
+      fill(myFig.colour()); sphere(1);
     }
     pop();
-    fill((partner != null)? color(0,100,100) : color(0,0,50));
-    box(3,0.1,3);
+    //fill((partner != null)? color(0,100,100) : color(0,0,50));
+    //box(3,0.1,3);
     pop();
     fill(color(favHue,100,100));
     translate(0, ageScl/2, 0);
-    box(ageScl*2, ageScl, ageScl*2);
+    scale(ageScl);
+    if (sex == Male) rotateX(PI);
+    cone(1,1, sex == Male, detail);
     pop();
   }
   boolean acceptable(Human a) {
     // avoid sisters and brothers
     if (a.mother != null && mother == a.mother) return false;
     if (a.father != null && father == a.father) return false;
+    if (a == mother || a == father || a.mother == this || a.father == this) return false;
     float f = a.myFig.howLike(favHue);
     return f > ((partner != null)? partnerF * fickleness : tolerance);
   }

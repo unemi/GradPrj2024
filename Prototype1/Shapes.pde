@@ -1,9 +1,18 @@
-void cone(float r, float h) {
+void cone(float r, float h, boolean bottom, int detail) {
   beginShape(TRIANGLE_FAN);
   vertex(0, -h / 2, 0);
-  for (int i = 0; i <= 32; i ++) {
-    float th = i * TWO_PI / 32.;
+  for (int i = 0; i <= detail; i ++) {
+    float th = i * TWO_PI / detail;
     vertex(r * cos(th), h / 2, r * sin(th));
+  }
+  endShape();
+  if (bottom) {
+    beginShape(TRIANGLE_FAN);
+    vertex(0, h / 2, 0);
+    for (int i = 0; i <= detail; i ++) {
+      float th = i * TWO_PI / detail;
+      vertex(r * cos(th), h / 2, r * sin(th));
+    }
   }
   endShape();
 }

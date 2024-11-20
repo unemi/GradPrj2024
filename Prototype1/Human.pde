@@ -1,5 +1,5 @@
 int Male = 0, Female = 1;
-float Avoid = 1., Approach = 0.2;
+float Avoid = 1.5, Approach = 0.1;
 
 float inheritedHue(float m, float d) {
   float h = ((random(1.0) < 0.5)? m : d) + random(-5,5);
@@ -34,7 +34,7 @@ class Human {
   float vx, vz, fx, fz;
   float favHue;
   Figure myFig;
-  Human partner, candidate, fetusDad;
+  Human father, mother, partner, candidate, fetusDad;
   float partnerF;
   float activeness = 0.9, tolerance = 0.5, fickleness = 0.3;
   float ageScl;
@@ -62,6 +62,7 @@ class Human {
     th = random(-PI,PI);
     myFig = new Figure(sex, mom.myFig, dad.myFig);
     favHue = inheritedHue(mom.favHue, dad.favHue);
+    father = dad; mother = mom;
   }
   void resetForStep() {
     fx = fz = 0;
@@ -110,15 +111,12 @@ class Human {
     scale(ageScl,-ageScl,ageScl);
     push();
     if (sex == Male) {
-      scale(5);
       rotateY(PI/2);
-      body.setFill(myFig.colour());
-      shape(body);
-      //cylinder(ageScl,ageScl*2);
+      //body.setFill(myFig.colour()); scale(5); shape(body);
+      fill(myFig.colour()); cylinder(1,2);
     } else {
-      //scale(ageScl,-ageScl,ageScl);//sphere(5);
-      head.setFill(myFig.colour());
-      shape(head);
+      //head.setFill(myFig.colour()); shape(head);
+      fill(myFig.colour()); cylinder(1,2);
     }
     pop();
     fill((partner != null)? color(0,100,100) : color(0,0,50));
@@ -130,6 +128,9 @@ class Human {
     pop();
   }
   boolean acceptable(Human a) {
+    // avoid sisters and brothers
+    if (a.mother != null && mother == a.mother) return false;
+    if (a.father != null && father == a.father) return false;
     float f = a.myFig.howLike(favHue);
     return f > ((partner != null)? partnerF * fickleness : tolerance);
   }
@@ -140,6 +141,7 @@ class Human {
     }
   }
   float pregProb() {  // proberbility of fertilization
+    if (partner.sex == Female) return 0.;
     // M: (0,0)-(13,0)-(15,1.0)-(30,1.0)-(50,0.6)-(90,0.0)
     // F: (0,0)-(14,0)-(16,1.0)-(30,1.0)-(50,0.0)
     float f = age / 12.0, m = partner.age / 12.0;
@@ -161,7 +163,7 @@ class Human {
         //println("got pregnant.");
       } else if (pregn > 0) { pregn ++;
       } else if (partner != null && partner.partner == this
-        && pregProb() > random(1.0)) {
+        && pop.size() < 1000 && pregProb()*800/pop.size() > random(1.0)) {
           pregn = 1;
           fetusDad = partner;
       }

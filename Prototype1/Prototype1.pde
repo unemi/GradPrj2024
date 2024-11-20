@@ -1,6 +1,6 @@
 ArrayList<Human> pop, newBornBB;
-int initPopSize = 100;
-float nearDist = 20, worldSize = 400, agentSize = 2;
+int initPopSize = 800;
+float nearDist = 60, worldSize = 400, agentSize = 2;
 PShape head, body, env;
 int camMode = 2;
 int step = 0;
@@ -20,17 +20,18 @@ void setup() {
   perspective(fov, float(width)/height, cZ/100.0, cZ*10.0);
   //frameRate(2);
 }
-float camAngle = 0.;
+float camAngle = 0., camDist = 100.;
 void draw() {
   background(220);
   ambientLight(0,0,70);
   directionalLight(0,0,80, 0,1,-1);
+  float d = worldSize*camDist/100.;
   switch (camMode) {
     case 0:
-    camera(worldSize*sin(camAngle),-worldSize/2,worldSize*cos(camAngle), 0,0,0, 0,1,0);
+    camera(d*sin(camAngle),-d/2,d*cos(camAngle), 0,0,0, 0,1,0);
     break;
     case 1:
-    camera(0,-worldSize/4,worldSize/4, 0,0,0, 0,1,0); break;
+    camera(0,-d/4,d/4, 0,0,0, 0,1,0); break;
     case 2:
     camera(viewer.x-cos(viewer.faceTh)*agentSize*6,
       -agentSize*4,
@@ -46,7 +47,7 @@ void draw() {
   box(worldSize+agentSize*2, 1, worldSize+agentSize*2);
   pop();
 //
-  int popSize = pop.size();
+  int popSize = pop.size(), nDeath = 0;
   ArrayList<Human> newPop = new ArrayList(popSize);
   while (pop.size() > 0) {
     int i = int(random(pop.size()));
@@ -57,27 +58,38 @@ void draw() {
   newBornBB = new ArrayList();
   for (Human h : pop) h.drawMe();
   for (Human h : pop) h.resetForStep();
+  boolean didViewerDie = false;
   for (int i = popSize - 1; i >= 0; i --) {
-    if (pop.get(i).age > 85*12) { pop.remove(i); }
+    Human h = pop.get(i);
+    if (h.age > 85*12) {
+      pop.remove(i); nDeath ++;
+      if (h == viewer) didViewerDie = true;
+    }
   }
-  pop.addAll(newBornBB);
   if ((popSize = pop.size()) <= 0) { noLoop(); return; }
+  if (didViewerDie) viewer = pop.get(0);
   for (int i = 1; i < popSize; i ++) {
     Human a = pop.get(i);
     for (int j = 0; j < i; j ++) {
       Human b = pop.get(j);
-      float d = a.distance(b);
+      d = a.distance(b);
       if (d > nearDist) continue;
       a.affected(b, d);
       b.affected(a, d);
     }
   }
   for (Human h : pop) h.doAction();
+  pop.addAll(newBornBB);
   int cnt = 0;
   for (Human h : pop) if (h.partner != null) cnt ++;
-  println(step++ + ": partners=" + cnt +
-    ", newBornBB=" + newBornBB.size() + ", popSize=" + popSize);
+  println(step++ + ": partners=" + cnt + ", dead=" + nDeath +
+    ", newBornBB=" + newBornBB.size() + ", popSize=" + pop.size());
 }
 void mousePressed() {
   camMode = (camMode + 1) % 3;
+}
+void mouseWheel(MouseEvent event) {
+  float e = event.getCount();
+  if ((camDist += e) <= 0) camDist = 20;
+  println(e);
 }

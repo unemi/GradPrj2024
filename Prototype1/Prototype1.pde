@@ -1,6 +1,7 @@
 ArrayList<Human> pop, newBornBB;
 int initPopSize = 800;
 float nearDist = 60, worldSize = 400, agentSize = 2;
+int AgeMax = 85;
 PShape head, body, env;
 int camMode = 2;
 int step = 0;
@@ -22,7 +23,9 @@ void setup() {
   //frameRate(2);
 }
 float camAngle = 0., camDist = 100.;
+int accTm = 0;
 void draw() {
+  step ++;
   background(220);
   ambientLight(0,0,70);
   directionalLight(0,0,80, 0,1,-1);
@@ -58,12 +61,21 @@ void draw() {
   }
   pop = newPop;
   newBornBB = new ArrayList();
+  
+  int startTm = millis();
   for (Human h : pop) h.drawMe();
+  int elapsedTm = millis() - startTm;
+  accTm += elapsedTm;
+  if ((step % 100) == 0) {
+    println(step,",", accTm * 1000. / 100.0 / pop.size());
+    accTm = 0;
+  }
+
   for (Human h : pop) h.resetForStep();
   boolean didViewerDie = false;
   for (int i = popSize - 1; i >= 0; i --) {
     Human h = pop.get(i);
-    if (h.age > 85*12) {
+    if (h.age > AgeMax*12) {
       pop.remove(i); nDeath ++;
       if (h == viewer) didViewerDie = true;
     }
@@ -82,10 +94,10 @@ void draw() {
   }
   for (Human h : pop) h.doAction();
   pop.addAll(newBornBB);
-  int cnt = 0;
-  for (Human h : pop) if (h.partner != null) cnt ++;
-  println(step++ + ": partners=" + cnt + ", dead=" + nDeath +
-    ", newBornBB=" + newBornBB.size() + ", popSize=" + pop.size());
+  //int cnt = 0;
+  //for (Human h : pop) if (h.partner != null) cnt ++;
+  //println(step + ": partners=" + cnt + ", dead=" + nDeath +
+  //  ", newBornBB=" + newBornBB.size() + ", popSize=" + pop.size());
 }
 void mousePressed() {
   camMode = (camMode + 1) % 3;

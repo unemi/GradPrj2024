@@ -1,5 +1,7 @@
 int Male = 0, Female = 1;
 float Avoid = 1.5, Approach = 0.1;
+int DetailMax = 32, DetailMin = 3;
+float TurnAngleMax = PI/36;  // 5 degree
 
 float inheritedHue(float m, float d) {
   float h = ((random(1.0) < 0.5)? m : d) + random(-5,5);
@@ -18,8 +20,8 @@ class Figure {
     s = min(100, max(50, ((random(1.0) < 0.5)? m.s : d.s) + random(-3,3)));
     b = (sex == Male)? 70 : 100;
   }
-  color colour() {
-    return color(h, s, b);
+  color colour(float sat) {
+    return color(h, s * sat, b);
   }
   float howLike(float fh) {
     float d = abs(h - fh);
@@ -69,9 +71,9 @@ class Human {
     fx = fz = 0;
     age ++;
     float avoid = nearDist * 5;
-    if (x - worldSize/2 < nearDist) fx = -avoid / pow(x - worldSize/2, 2);
+    if (worldSize/2 - x < nearDist) fx = -avoid / pow(worldSize/2 - x, 2);
     else if (x + worldSize/2 < nearDist) fx = avoid / pow(x + worldSize/2, 2);
-    if (z - worldSize/2 < nearDist) fz = -avoid / pow(z - worldSize/2, 2);
+    if (worldSize/2 - z < nearDist) fz = -avoid / pow(worldSize/2 - z, 2);
     else if (z + worldSize/2 < nearDist) fz = avoid / pow(z + worldSize/2, 2);
     candidateF = (partner != null)? partnerF * (1. - fickleness) : 1. - activeness;
     candidate = null;
@@ -94,9 +96,10 @@ class Human {
     translate(x, 0, z);
     ageScl = ((age > 17*12)? 1. :
       1. - (17*12 - age) / (17.*12) * 0.7) * agentSize;
+    float ageSat = (age < 50*12)? 1.0 : (AgeMax*12 - age) / float(AgeMax - 50);
     float camD = dist(x, 0, z, camX, camY, camZ);
-    detail = (camD < agentSize*2)? 32 : (camD > worldSize/2)? 6 :
-      int(32 - (camD - agentSize*2) / (worldSize/2 - agentSize*2) * (32 - 6));
+    detail = (camD < agentSize*2)? DetailMax : (camD > worldSize/2)? DetailMin :
+      int(DetailMax - (camD - agentSize*2) / (worldSize/2 - agentSize*2) * (DetailMax - DetailMin));
     sphereDetail(detail);
     if (candidate != null) {
       push();
@@ -104,7 +107,7 @@ class Human {
       rotateY(faceTh);
       translate(ageScl*2,-ageScl,0);
       rotateZ(-PI/2);
-      fill(candidate.myFig.colour());
+      fill(candidate.myFig.colour(ageSat));
       cone(ageScl*3/5, ageScl*2, false, detail);
       pop();
     } else faceTh = (partner != null)?
@@ -117,10 +120,10 @@ class Human {
     if (sex == Male) {
       rotateY(PI/2);
       //ody.setFill(myFig.colour()); scale(5); shape(body);
-      fill(myFig.colour()); sphere(1);
+      fill(myFig.colour(ageSat)); sphere(1);
     } else {
       //head.setFill(myFig.colour()); shape(head);
-      fill(myFig.colour()); sphere(1);
+      fill(myFig.colour(ageSat)); sphere(1);
     }
     pop();
     //fill((partner != null)? color(0,100,100) : color(0,0,50));
@@ -184,10 +187,20 @@ class Human {
         candidate.candidate = null;
       }
     }
-    vx = (vx + fx) * 0.99;
-    vz = (vz + fz) * 0.99;
-    float v = sqrt(vx*vx + vz*vz);
-    if (abs(v) > 1e-8) th = atan2(-vz, vx);
+    float newVx = (vx + fx) * 0.99;
+    float newVz = (vz + fz) * 0.99;
+    float v = sqrt(newVx*newVx + newVz*newVz);
+    float turnP = 0.0;
+    if (abs(v) > 1e-8) {
+      float newTh = atan2(-newVz, newVx);
+      float dTh = abs(newTh - th);
+      if (dTh > PI) dTh = PI - dTh;
+      if (dTh > TurnAngleMax)
+        turnP = (dTh - TurnAngleMax) / (PI - TurnAngleMax) * 0.9;
+    }
+    vx += (newVx - vx) * (1. - turnP);
+    vz += (newVz - vz) * (1. - turnP);
+    th = atan2(-vz, vx);
     float maxV = 2;
     if (v > maxV) { vx *= maxV / v; vz *= maxV / v; }
     x += vx * ageScl/5; z += vz * ageScl/5;

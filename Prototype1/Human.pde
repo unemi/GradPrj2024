@@ -1,3 +1,4 @@
+boolean SexLinkage = false;
 int Male = 0, Female = 1;
 float Avoid = 1.5, Approach = 0.1;
 int DetailMax = 32, DetailMin = 3;
@@ -34,8 +35,8 @@ class Human {
   int ID, sex, age, pregn;
   float x, z, th, faceTh;
   float vx, vz, fx, fz;
-  float favHue;
-  Figure myFig;
+  float favHueM, favHueF;
+  Figure myFigM, myFigF;
   Human father, mother, partner, candidate, fetusDad;
   float partnerF;
   float activeness = 0.9, tolerance = 0.5, fickleness = 0.3;
@@ -51,8 +52,10 @@ class Human {
     x = random(-200,200);
     z = random(-200,200);
     th = random(-PI,PI);
-    myFig = new Figure(sex);
-    favHue = random(360);
+    myFigF = new Figure(sex);
+    myFigM = new Figure(sex);
+    favHueF = random(360);
+    favHueM = random(360);
     age = int(random(90*12));
   }
   Human(Human mom, Human dad) {
@@ -63,10 +66,14 @@ class Human {
     x = mom.x + d * cos(th);
     z = mom.z + d * sin(th);
     th = random(-PI,PI);
-    myFig = new Figure(sex, mom.myFig, dad.myFig);
-    favHue = inheritedHue(mom.favHue, dad.favHue);
+    myFigF = new Figure(sex, mom.myFigF, dad.myFigF);
+    myFigM = new Figure(sex, mom.myFigM, dad.myFigM);
+    favHueF = inheritedHue(mom.favHueF, dad.favHueF);
+    favHueM = inheritedHue(mom.favHueM, dad.favHueM);
     father = dad; mother = mom;
   }
+  Figure myFig() { return SexLinkage? (sex == Male)? myFigM : myFigF : myFigM; }
+  float favHue() { return SexLinkage? (sex == Male)? favHueM : favHueF : favHueM; }
   void resetForStep() {
     fx = fz = 0;
     age ++;
@@ -83,7 +90,7 @@ class Human {
     return dist(x, z, a.x, a.z);
   }
   void affected(Human a, float d) {
-    float like = a.myFig.howLike(favHue);
+    float like = a.myFig().howLike(favHue());
     float dx = (a.x - x) / d, dz = (a.z - z) / d;
     float avoid = - nearDist / (d * d);
     float f = Avoid * avoid + Approach * like;
@@ -101,13 +108,14 @@ class Human {
     detail = (camD < agentSize*2)? DetailMax : (camD > worldSize/2)? DetailMin :
       int(DetailMax - (camD - agentSize*2) / (worldSize/2 - agentSize*2) * (DetailMax - DetailMin));
     sphereDetail(detail);
+    // Proposing
     if (candidate != null) {
       push();
       faceTh = atan2(-candidate.z + z, candidate.x - x);
       rotateY(faceTh);
       translate(ageScl*2,-ageScl,0);
       rotateZ(-PI/2);
-      fill(candidate.myFig.colour(ageSat));
+      fill(candidate.myFig().colour(ageSat));
       cone(ageScl*3/5, ageScl*2, false, detail);
       pop();
     } else faceTh = (partner != null)?
@@ -116,20 +124,22 @@ class Human {
     push();
     translate(0,-ageScl,0);
     scale(ageScl,-ageScl,ageScl);
+    // Head
     push();
     if (sex == Male) {
       rotateY(PI/2);
-      //ody.setFill(myFig.colour()); scale(5); shape(body);
-      fill(myFig.colour(ageSat)); sphere(1);
+      //body.setFill(myFig.colour()); scale(5); shape(body);
+      fill(myFig().colour(ageSat)); sphere(1);
     } else {
       //head.setFill(myFig.colour()); shape(head);
-      fill(myFig.colour(ageSat)); sphere(1);
+      fill(myFig().colour(ageSat)); sphere(1);
     }
     pop();
     //fill((partner != null)? color(0,100,100) : color(0,0,50));
     //box(3,0.1,3);
     pop();
-    fill(color(favHue,100,100));
+    // Body
+    fill(color(favHue(),100,100));
     translate(0, ageScl/2, 0);
     scale(ageScl);
     if (sex == Male) rotateX(PI);
@@ -141,7 +151,7 @@ class Human {
     if (a.mother != null && mother == a.mother) return false;
     if (a.father != null && father == a.father) return false;
     if (a == mother || a == father || a.mother == this || a.father == this) return false;
-    float f = a.myFig.howLike(favHue);
+    float f = a.myFig().howLike(favHue());
     return f > ((partner != null)? partnerF * fickleness : tolerance);
   }
   void gatherPickers() {
@@ -183,7 +193,7 @@ class Human {
         partner = candidate;
         partnerF = candidateF;
         candidate.partner = this;
-        candidate.partnerF = myFig.howLike(candidate.favHue);
+        candidate.partnerF = myFig().howLike(candidate.favHue());
         candidate.candidate = null;
       }
     }

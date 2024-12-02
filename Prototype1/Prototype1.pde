@@ -24,6 +24,9 @@ void setup() {
 }
 float camAngle = 0., camDist = 100.;
 int accTm = 0;
+float std(float s, float s2, int n) {
+   return sqrt((s2 - s*s/n)/n);
+}
 void draw() {
   step ++;
   background(220);
@@ -67,12 +70,25 @@ void draw() {
   int elapsedTm = millis() - startTm;
   accTm += elapsedTm;
   if ((step % 100) == 0) {
-    println(step,",", accTm * 1000. / 100.0 / pop.size());
+    int N = 10, cnt[] = new int[N];
+    float sumR = 0, sumI = 0, sumR2 = 0, sumI2 = 0;
+    for (Human h : pop) {
+      cnt[int(h.favHueM * N / 360)] ++;
+      float R = cos(h.favHueM * PI / 180), I = sin(h.favHueM * PI / 180);
+      sumR += R; sumI += I;
+      sumR2 += R*R; sumI2 += I*I;
+    }
+    // Standard Deviation
+    print(step + "," +
+      atan2(std(sumI, sumI2, popSize), std(sumR, sumR2, popSize))*180/PI);
+    for (int i = 0; i < N; i ++) print(cnt[i] + ",");
+    println(accTm * 1000. / 100.0 / popSize);
     accTm = 0;
   }
 
   for (Human h : pop) h.resetForStep();
   boolean didViewerDie = false;
+  // Kill aged guys
   for (int i = popSize - 1; i >= 0; i --) {
     Human h = pop.get(i);
     if (h.age > AgeMax*12) {
@@ -82,6 +98,7 @@ void draw() {
   }
   if ((popSize = pop.size()) <= 0) { noLoop(); return; }
   if (didViewerDie) viewer = pop.get(0);
+  // Interaction
   for (int i = 1; i < popSize; i ++) {
     Human a = pop.get(i);
     for (int j = 0; j < i; j ++) {

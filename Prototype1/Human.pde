@@ -1,6 +1,5 @@
-boolean SexLinkage = false;
 int Male = 0, Female = 1;
-float Avoid = 1.5, Approach = 0.1;
+float Avoid = 1., Approach = 0.1;
 int DetailMax = 32, DetailMin = 3;
 float TurnAngleMax = PI/36;  // 5 degree
 

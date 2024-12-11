@@ -1,6 +1,6 @@
 final int ForDemo = 0, ForMiki = 1, ForOkegawa = 2;
 int forWho = ForOkegawa;//ForDemo;
-int camMode = 2;
+int camMode = 1;
 ArrayList<Human> pop, newBornBB;
 int initPopSize = 800;
 boolean SexLinkage = true;
@@ -56,7 +56,7 @@ void draw() {
     camX = d*sin(camAngle); camY = -d/2; camZ = d*cos(camAngle);
     tgtX = tgtY = tgtZ = 0; break;
     case 1:
-    camX = 0; camY = -d/4; camZ = d/4;
+    camX = worldSize*.45; camY = -agentSize*5; camZ = worldSize*.45;
     tgtX = tgtY = tgtZ = 0; break;
     case 2:
     camX = viewer.x-cos(viewer.faceTh)*agentSize*d/40;

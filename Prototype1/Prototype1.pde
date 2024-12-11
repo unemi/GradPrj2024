@@ -1,28 +1,33 @@
 final int ForDemo = 0, ForMiki = 1, ForOkegawa = 2;
-int forWho = ForDemo;
+int forWho = ForOkegawa;//ForDemo;
+int camMode = 2;
 ArrayList<Human> pop, newBornBB;
 int initPopSize = 800;
 boolean SexLinkage = true;
 float nearDist = 30, worldSize = 400, agentSize = 2;
 int AgeMax = 85;
 PShape head, body, env;
-int camMode = 1;
 int step = 0;
 float camX, camY, camZ, tgtX, tgtY, tgtZ;
 Human viewer;
 Table logTable;
 String logTitle;
-void setup() {
-  size(1280,720,P3D);
+int accTm = 0;
+void resetPop() {
   pop = new ArrayList(initPopSize);
   for (int i = 0; i < initPopSize; i ++)
     pop.add(new Human());
+  viewer = pop.get(1);
+  accTm = step = 0;
+}
+void setup() {
+  resetPop();
+  size(1280,720,P3D);
   noStroke();
   colorMode(HSB, 360, 100, 100);
   //head = loadShape("monkeyHead.obj");
   //body = loadShape("LowPoly-Characters.obj");
   env = setupEnv("SokaUnivCampus.jpg");
-  viewer = pop.get(1);
   float fov = PI/3., cZ = height/2.0 / tan(fov/2.);
   perspective(fov, float(width)/height, cZ/100.0, cZ*10.0);
 
@@ -38,7 +43,6 @@ void setup() {
   //frameRate(2);
 }
 float camAngle = 0., camDist = 100.;
-int accTm = 0;
 float std(float s, float s2, int n) {
    return sqrt((s2 - s*s/n)/n);
 }
@@ -68,6 +72,19 @@ void draw() {
   fill(45,50,90);
   box(worldSize+agentSize*2, 1, worldSize+agentSize*2);
   pop();
+  int startTm = millis();
+  for (Human h : pop) h.drawMe();
+  int elapsedTm = millis() - startTm;
+  if (forWho == ForOkegawa) {
+    accTm += elapsedTm;
+    if (step >= 600) {
+      println(DetailMax, accTm / 600. / pop.size());
+      resetPop();
+      //int DetailMax = 32, DetailMin = 3;
+      DetailMax -= 4;
+      if (DetailMax < 3) exit();
+    }
+  }
   simStep();
 }
 void simStep() {
@@ -82,10 +99,6 @@ void simStep() {
   pop = newPop;
   newBornBB = new ArrayList();
   
-  int startTm = millis();
-  for (Human h : pop) h.drawMe();
-  int elapsedTm = millis() - startTm;
-  accTm += elapsedTm;
   //if ((step % 100) == 0) {
   //  int N = 10, cnt[] = new int[N];
   //  float sumR = 0, sumI = 0, sumR2 = 0, sumI2 = 0;
@@ -99,8 +112,6 @@ void simStep() {
   //  print(step + "," +
   //    atan2(std(sumI, sumI2, popSize), std(sumR, sumR2, popSize))*180/PI);
   //  for (int i = 0; i < N; i ++) print(cnt[i] + ",");
-  //  println(accTm * 1000. / 100.0 / popSize);
-  //  accTm = 0;
   //}
 
   for (Human h : pop) h.resetForStep();
@@ -130,15 +141,16 @@ void simStep() {
   pop.addAll(newBornBB);
   //
   // print statistics in every 50 steps
-  if (step % 50 == 0) switch (forWho) {
-    case ForMiki:
-    TableRow newRow = logTable.addRow();
-    newRow.setInt("Step", step);
-    newRow.setFloat(logTitle, hopkins());
-    println(step);
-    if (step >= 3000) {
-      saveTable(logTable, "result.csv");
-      exit();
+  switch (forWho) {
+    case ForMiki: if (step % 50 == 0) {
+      TableRow newRow = logTable.addRow();
+      newRow.setInt("Step", step);
+      newRow.setFloat(logTitle, hopkins());
+      println(step);
+      if (step >= 3000) {
+        saveTable(logTable, "result.csv");
+        exit();
+      }
     }
   }
   //int cnt = 0;

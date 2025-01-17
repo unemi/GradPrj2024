@@ -34,3 +34,16 @@ float hopkins() {
   }
   return u / (u + w);
 }
+PVector sexualDimorphism() {
+  float sumS = 0., sumC = 0.;
+  for (Human h : pop) {
+    float d = abs(h.favHueM - h.favHueF);
+    if (d <= 180.) d = 360. - d;
+    sumS += sin(d * PI / 180.);
+    sumC += cos(d * PI / 180.);
+  }
+  float m = atan2(sumS, sumC) * 180. / PI;
+  float r = sqrt(sumS * sumS + sumC * sumC) / pop.size();
+  float s = sqrt(-2. * log(r));
+  return new PVector(m, s);
+}

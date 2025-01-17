@@ -1,5 +1,5 @@
 final int ForDemo = 0, ForMiki = 1, ForOkegawa = 2;
-int forWho = ForOkegawa;//ForDemo;
+int forWho = ForMiki;
 int camMode = 1;
 ArrayList<Human> pop, newBornBB;
 int initPopSize = 800;
@@ -37,8 +37,10 @@ void setup() {
     logTable = new Table();
     logTable.addColumn("Step");
     logTable.addColumn(logTitle);
-    noLoop();
-    for (;;) simStep();
+    logTable.addColumn("DimoAve");
+    logTable.addColumn("DimoSTD");
+    //noLoop();
+    //for (;;) simStep();
   }
   //frameRate(2);
 }
@@ -146,6 +148,9 @@ void simStep() {
       TableRow newRow = logTable.addRow();
       newRow.setInt("Step", step);
       newRow.setFloat(logTitle, hopkins());
+      PVector p = sexualDimorphism();
+      newRow.setFloat("DimoAve", p.x);
+      newRow.setFloat("DimoSTD", p.y);
       println(step);
       if (step >= 3000) {
         saveTable(logTable, "result.csv");
@@ -165,4 +170,8 @@ void mouseWheel(MouseEvent event) {
   float e = event.getCount();
   if ((camDist += e) <= 0) camDist = 20;
   println(e);
+}
+boolean running = true;
+void keyPressed() {
+  if ((running = !running)) loop(); else noLoop();
 }

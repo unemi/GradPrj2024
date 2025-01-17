@@ -104,8 +104,9 @@ class Human {
       1. - (17*12 - age) / (17.*12) * 0.7) * agentSize;
     float ageSat = (age < 50*12)? 1.0 : (AgeMax*12 - age) / float(AgeMax - 50);
     float camD = dist(x, 0, z, camX, camY, camZ);
-    detail = (camD < agentSize*2)? DetailMax : (camD > worldSize/2)? DetailMin :
-      int(DetailMax - (camD - agentSize*2) / (worldSize/2 - agentSize*2) * (DetailMax - DetailMin));
+    float farthest = worldSize/2, nearest = ageScl*2;
+    detail = (camD < nearest)? DetailMax : (camD > farthest)? DetailMin :
+      int(DetailMax - (camD - ageScl*2) / (farthest - nearest) * (DetailMax - DetailMin));
     sphereDetail(detail);
     // Proposing
     if (candidate != null) {
